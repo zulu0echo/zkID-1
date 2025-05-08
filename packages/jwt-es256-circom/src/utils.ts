@@ -67,7 +67,11 @@ export function extractXYFromPEM(pk: string) {
   return [bufferToBigInt(x), bufferToBigInt(y)];
 }
 
-export function encodeClaims(claims: string[], maxClaims: number, maxClaimsLength: number) {
+export function encodeClaims(
+  claims: string[],
+  maxClaims: number,
+  maxClaimsLength: number
+): { claimArray: bigint[][]; claimLengths: bigint[] } {
   const claimArray = Array(maxClaims)
     .fill(null)
     .map(() => Array(maxClaimsLength).fill(0n));

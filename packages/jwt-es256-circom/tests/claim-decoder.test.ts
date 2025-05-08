@@ -5,14 +5,14 @@ import { circomkit } from "./common";
 import { encodeClaims } from "../src/utils";
 
 describe("ClaimDecoder", () => {
-  let circuit: WitnessTester<["claims", "claimLengths"], ["decodedClaims", "claimHash"]>;
+  let circuit: WitnessTester<["claims", "claimLengths"], ["decodedClaims", "claimHashes"]>;
 
   const maxClaimsLength = 128;
   const maxClaims = 3;
 
   before(async () => {
     circuit = await circomkit.WitnessTester("ClaimDecoder", {
-      file: "claim_decoder",
+      file: "claim-decoder",
       template: "ClaimDecoder",
       params: [maxClaims, maxClaimsLength],
       recompile: true,
@@ -33,9 +33,11 @@ describe("ClaimDecoder", () => {
       claimLengths,
     });
 
-    const outputs = await circuit.readWitnessSignals(witness, ["decodedClaims", "claimHash"]);
+    const outputs = await circuit.readWitnessSignals(witness, ["decodedClaims", "claimHashes"]);
+
+    console.log(outputs.decodedClaims);
     const decodedClaims = outputs.decodedClaims as number[][];
-    const circuitClaimHash = outputs.claimHash as number[][];
+    const circuitClaimHash = outputs.claimHashes as number[][];
 
     for (let i = 0; i < inputs.length; i++) {
       const length = Number(claimLengths[i]);
@@ -53,5 +55,6 @@ describe("ClaimDecoder", () => {
 
       assert.strictEqual(circuitHashHex, expectedHashHex);
     }
+    await circuit.expectConstraintPass(witness);
   });
 });
