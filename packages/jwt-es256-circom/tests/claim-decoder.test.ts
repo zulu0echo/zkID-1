@@ -35,9 +35,11 @@ describe("ClaimDecoder", () => {
 
     const outputs = await circuit.readWitnessSignals(witness, ["decodedClaims", "claimHashes"]);
 
-    console.log(outputs.decodedClaims);
     const decodedClaims = outputs.decodedClaims as number[][];
     const circuitClaimHash = outputs.claimHashes as number[][];
+
+    console.log("Decoded claims:", decodedClaims);
+    console.log("Claim hashes:", circuitClaimHash);
 
     for (let i = 0; i < inputs.length; i++) {
       const length = Number(claimLengths[i]);

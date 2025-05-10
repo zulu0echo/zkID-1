@@ -5,7 +5,9 @@ include "jwt_tx_builder/header-payload-extractor.circom";
 include "jwt_tx_builder/array.circom";
 include "keyless_zk_proofs/arrays.circom";
 include "@zk-email/circuits/lib/sha.circom";
-include "claim_decoder.circom";
+include "claim-decoder.circom";
+include "age-verifier.circom";
+include "utils.circom";
 
 template JWT(
     n,
@@ -17,9 +19,10 @@ template JWT(
 
     maxMatches,
     maxSubstringLength,
-    maxClaims,
     maxClaimsLength
 ) {
+    var decodedLen = (maxClaimsLength * 3) / 4;
+
     signal input message[maxMessageLength]; // JWT message (header + payload)
     signal input messageLength; // Length of the message signed in the JWT
     signal input periodIndex; // Index of the period in the JWT message
@@ -33,12 +36,18 @@ template JWT(
     signal input matchLength[maxMatches];
     signal input matchIndex[maxMatches];
 
-    signal input claims[maxClaims][maxClaimsLength];  
-    signal input claimLengths[maxClaims];      
+    signal input claims[maxMatches][maxClaimsLength];
+    signal input claimLengths[maxMatches];
+    
+    signal input currentYear;
+    signal input currentMonth;
+    signal input currentDay;
 
-    component decodedClaims = ClaimDecoder(maxClaims, maxClaimsLength);
-    decodedClaims.claims <== claims;
-    decodedClaims.claimLengths <== claimLengths;
+    component claimDecoder = ClaimDecoder(maxMatches, maxClaimsLength);
+    claimDecoder.claims <== claims;
+    claimDecoder.claimLengths <== claimLengths;
+        
+    ClaimComparator(maxMatches, maxSubstringLength)(claimDecoder.claimHashes ,claimLengths, matchSubstring, matchLength);
 
     component es256 = ES256(n,k,maxMessageLength);
     es256.message <== message;
@@ -68,6 +77,7 @@ template JWT(
         matcher[i].substr_len <== matchLength[i];
         matcher[i].start_index <== matchIndex[i];
         matcher[i].enabled <== enableMacher[i].out;
-
     }
+
+    signal output ageAbove18 <== AgeVerifier(decodedLen)(claimDecoder.decodedClaims[1], currentYear, currentMonth, currentDay);
 }

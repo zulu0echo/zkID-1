@@ -2,12 +2,7 @@ import { WitnessTester } from "circomkit";
 import { circomkit } from "./common";
 import { generateJwtCircuitParams, generateJwtInputs } from "../src/jwt";
 
-function base64urlToBase64(b64url: string) {
-  let b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = (4 - (b64.length % 4)) % 4;
-  return b64 + "=".repeat(pad);
-}
-describe("ES256 Verifier Circuit", () => {
+describe("JWT Verifier", () => {
   let circuit: WitnessTester<
     [
       "message",
@@ -21,18 +16,21 @@ describe("ES256 Verifier Circuit", () => {
       "matchLength",
       "matchIndex",
       "claims",
-      "claimLengths"
+      "claimLengths",
+      "currentYear",
+      "currentMonth",
+      "currentDay"
     ],
-    []
+    ["ageAbove18"]
   >;
 
-  describe("JWT Circuit", () => {
+  describe("Age Claim", () => {
     before(async () => {
       const RECOMPILE = true;
       circuit = await circomkit.WitnessTester(`JWT`, {
         file: "jwt",
         template: "JWT",
-        params: [43, 6, 2048, 256, 2000, 5, 50, 3, 128],
+        params: [43, 6, 2048, 256, 2000, 3, 50, 128],
         recompile: RECOMPILE,
       });
       console.log("#constraints:", await circuit.getConstraintCount());
@@ -54,16 +52,12 @@ describe("ES256 Verifier Circuit", () => {
         y: "mm3p9quG010NysYgK-CAQz2E-wTVSNeIHl_HvWaaM6I",
       };
 
-      const params = generateJwtCircuitParams([43, 6, 2048, 256, 2000, 5, 50, 3, 128]);
+      const params = generateJwtCircuitParams([43, 6, 2048, 256, 2000, 3, 50, 128]);
       const inputs = generateJwtInputs(params, token, jwk, hashedClaims, claims);
 
-      console.log("Computing witness...");
       const witness = await circuit.calculateWitness(inputs);
 
-      let outputs = await circuit.readWitnessSignals(witness, ["decodedClaims"]);
-
-      console.log(outputs.decodedClaims);
-
+      await circuit.expectPass(inputs, { ageAbove18: 1 });
       await circuit.expectConstraintPass(witness);
     });
   });

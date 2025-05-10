@@ -2,6 +2,7 @@ pragma circom 2.1.6;
 include "jwt_tx_builder/array.circom";
 include "@zk-email/circuits/lib/base64.circom";
 include "@zk-email/circuits/lib/sha.circom";
+include "utils.circom";
 
 /// @title ClaimDecoder
 /// @notice Decodes multiple Base64 input claims that might be padded with zeros
@@ -10,18 +11,18 @@ include "@zk-email/circuits/lib/sha.circom";
 /// @input claims: array of raw Base64 input arrays, each padded with zeros
 /// @input claimLengths: array containing the actual length of each Base64 claim
 /// @output decodedClaims: array of decoded outputs
-template ClaimDecoder(maxClaims, maxClaimsLength) {
+template ClaimDecoder(maxMatches, maxClaimsLength) {
     var decodedLen = (maxClaimsLength * 3) / 4;
 
-    signal input claims[maxClaims][maxClaimsLength];  
-    signal input claimLengths[maxClaims];      
+    signal input claims[maxMatches][maxClaimsLength];  
+    signal input claimLengths[maxMatches];      
 
-    signal output decodedClaims[maxClaims][decodedLen];
+    signal output decodedClaims[maxMatches][decodedLen];
 
-    component paddedClaims[maxClaims];
-    component claimDecoders[maxClaims];
+    component paddedClaims[maxMatches];
+    component claimDecoders[maxMatches];
 
-    for (var i = 0; i < maxClaims; i++) {
+    for (var i = 0; i < maxMatches; i++) {
         paddedClaims[i] = SelectSubArrayBase64(maxClaimsLength,maxClaimsLength);
         paddedClaims[i].in <== claims[i];
         paddedClaims[i].startIndex <== 0;
@@ -35,11 +36,11 @@ template ClaimDecoder(maxClaims, maxClaimsLength) {
         }
     }
 
-    component claimHasher[maxClaims];
-    component hashByteConvert[maxClaims][32];
-    signal output claimHashes[maxClaims][32]; 
+    component claimHasher[maxMatches];
+    component hashByteConvert[maxMatches][32];
+    signal output claimHashes[maxMatches][32]; 
 
-    for (var i = 0; i < maxClaims; i++) {
+    for (var i = 0; i < maxMatches; i++) {
         claimHasher[i] = Sha256Bytes(maxClaimsLength);
         claimHasher[i].paddedIn <== claims[i];
         claimHasher[i].paddedInLength <== maxClaimsLength;
@@ -53,3 +54,37 @@ template ClaimDecoder(maxClaims, maxClaimsLength) {
         }
     }
 }   
+
+template ClaimComparator(maxMatches , maxSubstringLength){
+    signal input claimHashes[maxMatches][32]; // hashed claims from rawclaims
+    signal input claimLengths[maxMatches];
+    
+    signal input matchSubstring[maxMatches][maxSubstringLength]; // hashed claims in base64url encoded
+    signal input matchLength[maxMatches];
+
+    component sdDecoders[maxMatches];
+    for (var i = 0; i < maxMatches; i++) {
+        sdDecoders[i] = DecodeSD(maxSubstringLength, 32);
+        sdDecoders[i].sdBytes <== matchSubstring[i];
+        sdDecoders[i].sdLen   <== matchLength[i];
+    }
+
+    component isZero[maxMatches];
+    signal useClaim[maxMatches];
+    for (var i = 0; i < maxMatches; i++) {
+        isZero[i] = IsEqual();
+        isZero[i].in[0] <== claimLengths[i];
+        isZero[i].in[1] <== 0;
+        useClaim[i] <== 1 - isZero[i].out;
+    }
+
+    component eq[maxMatches][32];
+    for (var i = 0; i < maxMatches; i++) {
+        for (var j = 0; j < 32; j++) {
+            eq[i][j] = IsEqual();
+            eq[i][j].in[0] <== claimHashes[i][j];
+            eq[i][j].in[1] <== sdDecoders[i].base64Out[j];
+            eq[i][j].out * useClaim[i] === useClaim[i];
+        }
+    }
+}

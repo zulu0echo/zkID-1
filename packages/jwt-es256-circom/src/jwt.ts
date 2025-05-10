@@ -9,7 +9,6 @@ interface JwtCircuitParams {
   maxB64PayloadLength: number;
   maxMatches: number;
   maxSubstringLength: number;
-  maxClaims: number;
   maxClaimLength: number;
 }
 
@@ -25,8 +24,7 @@ export function generateJwtCircuitParams(params: number[]): JwtCircuitParams {
     maxB64PayloadLength: params[4],
     maxMatches: params[5],
     maxSubstringLength: params[6],
-    maxClaims: params[7],
-    maxClaimLength: params[8],
+    maxClaimLength: params[7],
   };
 }
 
@@ -55,7 +53,6 @@ export function generateJwtInputs(
   let matchLength: number[] = [];
   let matchIndex: number[] = [];
   for (const match of matches) {
-    console.log("match", match);
     assert.ok(matches.length <= params.maxSubstringLength);
     const index = payload.indexOf(match);
     assert.ok(index != -1);
@@ -70,16 +67,24 @@ export function generateJwtInputs(
     matchIndex.push(0);
   }
 
-  let { claimArray, claimLengths } = encodeClaims(claims, params.maxClaims, params.maxClaimLength);
+  let { claimArray, claimLengths } = encodeClaims(claims, params.maxMatches, params.maxClaimLength);
+
+  const now = new Date();
+  const currentYear = BigInt(now.getUTCFullYear());
+  const currentMonth = BigInt(now.getUTCMonth() + 1);
+  const currentDay = BigInt(now.getUTCDate());
 
   return {
     ...es256Inputs,
     periodIndex: token.indexOf("."),
     matchesCount: matches.length,
-    matchSubstring: matchSubstring,
-    matchLength: matchLength,
-    matchIndex: matchIndex,
+    matchSubstring,
+    matchLength,
+    matchIndex,
     claims: claimArray,
-    claimLengths: claimLengths,
+    claimLengths,
+    currentYear,
+    currentMonth,
+    currentDay,
   };
 }
