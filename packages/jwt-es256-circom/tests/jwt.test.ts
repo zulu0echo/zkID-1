@@ -26,14 +26,14 @@ describe("JWT Verifier", () => {
 
   describe("Age Claim", () => {
     before(async () => {
-      // const RECOMPILE = true;
-      // circuit = await circomkit.WitnessTester(`JWT`, {
-      //   file: "jwt",
-      //   template: "JWT",
-      //   params: [43, 6, 2048, 256, 2000, 3, 50, 128],
-      //   recompile: RECOMPILE,
-      // });
-      // console.log("#constraints:", await circuit.getConstraintCount());
+      const RECOMPILE = true;
+      circuit = await circomkit.WitnessTester(`JWT`, {
+        file: "jwt",
+        template: "JWT",
+        params: [43, 6, 2048, 256, 2000, 3, 50, 128],
+        recompile: RECOMPILE,
+      });
+      console.log("#constraints:", await circuit.getConstraintCount());
     });
 
     it("should verify Taiwan Vc JWT", async () => {
@@ -55,10 +55,10 @@ describe("JWT Verifier", () => {
       const params = generateJwtCircuitParams([43, 6, 2048, 256, 2000, 3, 50, 128]);
       const inputs = generateJwtInputs(params, token, jwk, hashedClaims, claims);
 
-      // const witness = await circuit.calculateWitness(inputs);
+      const witness = await circuit.calculateWitness(inputs);
 
-      // await circuit.expectPass(inputs, { ageAbove18: 1 });
-      // await circuit.expectConstraintPass(witness);
+      await circuit.expectPass(inputs, { ageAbove18: 1 });
+      await circuit.expectConstraintPass(witness);
     });
   });
 });
