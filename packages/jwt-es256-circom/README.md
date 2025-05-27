@@ -4,7 +4,8 @@
 - **PoC Documentation:** [JWT Docs (Notion)](https://www.notion.so/pse-team/Seediq-JWT-Docs-1f1d57e8dd7e80018655ccdc7332b1af)
 - **Circuit Specifications:** [SPEC.md](https://github.com/0xVikasRushi/zkID/blob/main/packages/jwt-es256-circom/SPEC.md)
 - **Demo Video:** [Loom Walkthrough](https://www.loom.com/share/83cebc44d54a47baae959a643475e9e2?sid=e7ec15c4-1ab6-4334-9830-c341d2d76e41)
-- **Live Frontend:** [seediq-frontend.vercel.app](https://seediq-frontend.vercel.app/)
+- **Live Frontend:** [https://privacy-scaling-explorations.github.io/seediq-frontend/](https://privacy-scaling-explorations.github.io/seediq-frontend/)
+
 
 ## Repositories
 

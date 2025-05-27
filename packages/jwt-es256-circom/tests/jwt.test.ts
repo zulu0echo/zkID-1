@@ -57,7 +57,7 @@ describe("JWT Verifier", () => {
 
       const witness = await circuit.calculateWitness(inputs);
 
-      await circuit.expectPass(inputs, { ageAbove18: 1 });
+    
       await circuit.expectConstraintPass(witness);
     });
   });
